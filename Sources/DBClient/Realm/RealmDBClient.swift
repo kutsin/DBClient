@@ -6,6 +6,8 @@
 //  Copyright © 2016 Yalantis. All rights reserved.
 //
 
+#if canImport(RealmSwift)
+
 import Foundation
 import RealmSwift
 
@@ -260,3 +262,5 @@ private extension Array {
         return (off..<lim).compactMap { self[$0] as? T }
     }
 }
+
+#endif

@@ -7,9 +7,6 @@
 //
 
 import Foundation
-import YALResult
-
-public typealias Result = YALResult
 
 public enum DBClientError: Error {
     
@@ -35,7 +32,7 @@ public protocol DBClient {
     /// - Parameters:
     ///   - request: request to execute
     ///   - completion: `Result` with array of objects or error in case of failude.
-    func execute<T>(_ request: FetchRequest<T>, completion: @escaping (Result<[T]>) -> Void)
+    func execute<T>(_ request: FetchRequest<T>, completion: @escaping (Result<[T], Error>) -> Void)
     
     /// Creates observable request from given `FetchRequest`.
     ///
@@ -48,38 +45,38 @@ public protocol DBClient {
     /// - Parameters:
     ///   - objects: list of objects to be inserted
     ///   - completion: `Result` with inserted objects or appropriate error in case of failure.
-    func insert<T: Stored>(_ objects: [T], completion: @escaping (Result<[T]>) -> Void)
+    func insert<T: Stored>(_ objects: [T], completion: @escaping (Result<[T], Error>) -> Void)
     
     /// Updates changed performed with objects to database.
     ///
     /// - Parameters:
     ///   - objects: list of objects to be updated
     ///   - completion: `Result` with updated objects or appropriate error in case of failure.
-    func update<T: Stored>(_ objects: [T], completion: @escaping (Result<[T]>) -> Void)
+    func update<T: Stored>(_ objects: [T], completion: @escaping (Result<[T], Error>) -> Void)
     
     /// Deletes objects from database.
     ///
     /// - Parameters:
     ///   - objects: list of objects to be deleted
     ///   - completion: `Result` with appropriate error in case of failure.
-    func delete<T: Stored>(_ objects: [T], completion: @escaping (Result<()>) -> Void)
+    func delete<T: Stored>(_ objects: [T], completion: @escaping (Result<(), Error>) -> Void)
     
     /// Removes all object of a given type from database.
-    func deleteAllObjects<T: Stored>(of type: T.Type, completion: @escaping (Result<()>) -> Void)
+    func deleteAllObjects<T: Stored>(of type: T.Type, completion: @escaping (Result<(), Error>) -> Void)
     
     /// Iterates through given objects and updates existing in database instances or creates them
     ///
     /// - Parameters:
     ///   - objects: objects to be worked with
     ///   - completion: `Result` with inserted and updated instances.
-    func upsert<T : Stored>(_ objects: [T], completion: @escaping (Result<(updated: [T], inserted: [T])>) -> Void)
+    func upsert<T : Stored>(_ objects: [T], completion: @escaping (Result<(updated: [T], inserted: [T]), Error>) -> Void)
     
     /// Synchronously executes given request and calls completion result wrapped in `Result`.
     ///
     /// - Parameters:
     ///   - request: request to execute
     /// - Returns: `Result` with array of objects or error in case of failude.
-    func execute<T>(_ request: FetchRequest<T>) -> Result<[T]>
+    func execute<T>(_ request: FetchRequest<T>) -> Result<[T], Error>
     
     /// Synchronously inserts objects to database.
     ///
@@ -87,7 +84,7 @@ public protocol DBClient {
     ///   - objects: list of objects to be inserted
     /// - Returns: `Result` with inserted objects or appropriate error in case of failure.
     @discardableResult
-    func insert<T: Stored>(_ objects: [T]) -> Result<[T]>
+    func insert<T: Stored>(_ objects: [T]) -> Result<[T], Error>
     
     /// Synchronously updates changed performed with objects to database.
     ///
@@ -95,7 +92,7 @@ public protocol DBClient {
     ///   - objects: list of objects to be updated
     /// - Returns: `Result` with updated objects or appropriate error in case of failure.
     @discardableResult
-    func update<T: Stored>(_ objects: [T]) -> Result<[T]>
+    func update<T: Stored>(_ objects: [T]) -> Result<[T], Error>
     
     /// Synchronously deletes objects from database.
     ///
@@ -103,7 +100,7 @@ public protocol DBClient {
     ///   - objects: list of objects to be deleted
     /// - Returns: `Result` with appropriate error in case of failure.
     @discardableResult
-    func delete<T: Stored>(_ objects: [T]) -> Result<Void>
+    func delete<T: Stored>(_ objects: [T]) -> Result<Void, Error>
     
     /// Synchronously iterates through given objects and updates existing in database instances or creates them
     ///
@@ -111,7 +108,7 @@ public protocol DBClient {
     ///   - objects: objects to be worked with
     /// - Returns: `Result` with inserted and updated instances.
     @discardableResult
-    func upsert<T : Stored>(_ objects: [T]) -> Result<(updated: [T], inserted: [T])>
+    func upsert<T : Stored>(_ objects: [T]) -> Result<(updated: [T], inserted: [T]), Error>
 }
 
 public extension DBClient {
@@ -119,14 +116,14 @@ public extension DBClient {
     /// Fetch all entities from database
     ///
     /// - Parameter completion: `Result` with array of objects
-    func findAll<T: Stored>(completion: @escaping (Result<[T]>) -> Void) {
+    func findAll<T: Stored>(completion: @escaping (Result<[T], Error>) -> Void) {
         execute(FetchRequest(), completion: completion)
     }
     
     /// Synchronously fetch all entities from database
     ///
     /// - Returns: `Result` with array of objects
-    func findAll<T: Stored>() -> Result<[T]> {
+    func findAll<T: Stored>() -> Result<[T], Error> {
         return execute(FetchRequest())
     }
     
@@ -138,7 +135,7 @@ public extension DBClient {
     ///   - primaryValue: the value of primary key field to search for
     ///   - predicate: predicate for request
     ///   - completion: `Result` with found object or nil
-    func findFirst<T: Stored>(_ type: T.Type, primaryValue: String, predicate: NSPredicate? = nil, completion: @escaping (Result<T?>) -> Void) {
+    func findFirst<T: Stored>(_ type: T.Type, primaryValue: String, predicate: NSPredicate? = nil, completion: @escaping (Result<T?, Error>) -> Void) {
         guard let primaryKey = type.primaryKeyName else {
             completion(.failure(DBClientError.missingPrimaryKey))
             return
@@ -166,7 +163,7 @@ public extension DBClient {
     ///   - primaryValue: the value of primary key field to search for
     ///   - predicate: predicate for request
     /// - Returns: `Result` with found object or nil
-    func findFirst<T: Stored>(_ type: T.Type, primaryValue: String, predicate: NSPredicate? = nil) -> Result<T?> {
+    func findFirst<T: Stored>(_ type: T.Type, primaryValue: String, predicate: NSPredicate? = nil) -> Result<T?, Error> {
         guard let primaryKey = type.primaryKeyName else {
             return .failure(DBClientError.missingPrimaryKey)
         }
@@ -189,12 +186,12 @@ public extension DBClient {
     /// - Parameters:
     ///   - object: object to be inserted
     ///   - completion: `Result` with inserted object or appropriate error in case of failure.
-    func insert<T: Stored>(_ object: T, completion: @escaping (Result<T>) -> Void) {
+    func insert<T: Stored>(_ object: T, completion: @escaping (Result<T, Error>) -> Void) {
         insert([object], completion: { completion($0.next(self.convertArrayTaskToSingleObject)) })
     }
     
     @discardableResult
-    func insert<T: Stored>(_ object: T) -> Result<T> {
+    func insert<T: Stored>(_ object: T) -> Result<T, Error> {
         return insert([object]).next(convertArrayTaskToSingleObject)
     }
     
@@ -203,12 +200,12 @@ public extension DBClient {
     /// - Parameters:
     ///   - object: object to be updated
     ///   - completion: `Result` with updated object or appropriate error in case of failure.
-    func update<T: Stored>(_ object: T, completion: @escaping (Result<T>) -> Void) {
+    func update<T: Stored>(_ object: T, completion: @escaping (Result<T, Error>) -> Void) {
         update([object], completion: { completion($0.next(self.convertArrayTaskToSingleObject)) })
     }
     
     @discardableResult
-    func update<T: Stored>(_ object: T) -> Result<T> {
+    func update<T: Stored>(_ object: T) -> Result<T, Error> {
         return update([object]).next(convertArrayTaskToSingleObject)
     }
     
@@ -217,12 +214,12 @@ public extension DBClient {
     /// - Parameters:
     ///   - object: object to be deleted
     ///   - completion: `Result` with appropriate error in case of failure.
-    func delete<T: Stored>(_ object: T, completion: @escaping (Result<()>) -> Void) {
+    func delete<T: Stored>(_ object: T, completion: @escaping (Result<(), Error>) -> Void) {
         delete([object], completion: completion)
     }
     
     @discardableResult
-    func delete<T: Stored>(_ object: T) -> Result<Void> {
+    func delete<T: Stored>(_ object: T) -> Result<Void, Error> {
         return delete([object])
     }
     
@@ -231,9 +228,9 @@ public extension DBClient {
     /// - Parameters:
     ///   - object: object to be worked with
     ///   - completion: `Result` with inserted or updated instance.
-    func upsert<T: Stored>(_ object: T, completion: @escaping (Result<(object: T, isUpdated: Bool)>) -> Void) {
+    func upsert<T: Stored>(_ object: T, completion: @escaping (Result<(object: T, isUpdated: Bool), Error>) -> Void) {
         upsert([object]) { result in
-            completion(result.next { (updated: [T], inserted: [T]) -> Result<(object: T, isUpdated: Bool)> in
+            completion(result.next { (updated: [T], inserted: [T]) -> Result<(object: T, isUpdated: Bool), Error> in
                 guard let object = updated.first ?? inserted.first else {
                     return Result.failure(DBClientError.missingData)
                 }
@@ -243,7 +240,7 @@ public extension DBClient {
     }
     
     @discardableResult
-    func upsert<T: Stored>(_ object: T) -> Result<(object: T, isUpdated: Bool)> {
+    func upsert<T: Stored>(_ object: T) -> Result<(object: T, isUpdated: Bool), Error> {
         return upsert([object]).next { (updated: [T], inserted: [T]) in
             guard let object = updated.first ?? inserted.first else {
                 return Result.failure(DBClientError.missingData)
@@ -252,7 +249,7 @@ public extension DBClient {
         }
     }
     
-    private func convertArrayTaskToSingleObject<T>(_ array: [T]) -> Result<T> {
+    private func convertArrayTaskToSingleObject<T>(_ array: [T]) -> Result<T, Error> {
         guard let first = array.first else {
             return .failure(DBClientError.missingData)
         }

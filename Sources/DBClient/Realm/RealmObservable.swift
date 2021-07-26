@@ -6,6 +6,8 @@
 //  Copyright © 2016 Yalantis. All rights reserved.
 //
 
+#if canImport(RealmSwift)
+
 import Foundation
 import RealmSwift
 
@@ -63,3 +65,5 @@ internal class RealmObservable<T: Stored>: RequestObservable<T> {
         notificationToken = nil
     }
 }
+
+#endif

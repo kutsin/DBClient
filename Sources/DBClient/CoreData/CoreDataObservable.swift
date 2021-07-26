@@ -97,21 +97,23 @@ private class FetchedResultsControllerDelegate<T: NSManagedObject>: NSObject, NS
     var observer: ((ObservableChange<T>) -> Void)?
     private var batchChanges: [CoreDataChange<T>] = []
     
-    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        guard let object = anObject as? T else {
-            return
-        }
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>,
+                    didChange anObject: Any,
+                    at indexPath: IndexPath?,
+                    for type: NSFetchedResultsChangeType,
+                    newIndexPath: IndexPath?) {
+        guard let _ = anObject as? T else { return }
         
         switch type {
         case .delete:
-            batchChanges.append(.delete(indexPath!.row, object))
-            
+            //batchChanges.append(.delete(indexPath!.row, object))
+            break
         case .insert:
-            batchChanges.append(.insert(newIndexPath!.row, object))
-            
+            //batchChanges.append(.insert(newIndexPath!.row, object))
+            break
         case .update, .move:
-            batchChanges.append(.update(indexPath!.row, object))
-            
+            //batchChanges.append(.update(indexPath!.row, object))
+            break
         @unknown
         default:
             assertionFailure("trying to handle unknown case \(type)")

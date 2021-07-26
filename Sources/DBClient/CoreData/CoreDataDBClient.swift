@@ -279,7 +279,7 @@ extension CoreDataDBClient: DBClient {
         return CoreDataObservable(request: request, context: mainContext)
     }
     
-    public func execute<T>(_ request: FetchRequest<T>, completion: @escaping (Result<[T]>) -> Void) where T: Stored {
+    public func execute<T>(_ request: FetchRequest<T>, completion: @escaping (Result<[T], Error>) -> Void) where T: Stored {
         let coreDataModelType = checkType(T.self)
         
         performReadTask { context in
@@ -301,7 +301,7 @@ extension CoreDataDBClient: DBClient {
     
     /// Insert given objects into context and save it
     /// If appropriate object already exists in DB it will be ignored and nothing will be inserted
-    public func insert<T>(_ objects: [T], completion: @escaping (Result<[T]>) -> Void) where T: Stored {
+    public func insert<T>(_ objects: [T], completion: @escaping (Result<[T], Error>) -> Void) where T: Stored {
         checkType(T.self)
         
         performWriteTask { context, savingClosure in
@@ -327,7 +327,7 @@ extension CoreDataDBClient: DBClient {
     
     /// Method to update existed in DB objects
     /// if there is no such object in db nothing will happened
-    public func update<T>(_ objects: [T], completion: @escaping (Result<[T]>) -> Void) where T: Stored {
+    public func update<T>(_ objects: [T], completion: @escaping (Result<[T], Error>) -> Void) where T: Stored {
         checkType(T.self)
         
         performWriteTask { context, savingClosure in
@@ -353,7 +353,7 @@ extension CoreDataDBClient: DBClient {
     }
     
     /// Update object if it exists or insert new one otherwise
-    public func upsert<T>(_ objects: [T], completion: @escaping (Result<(updated: [T], inserted: [T])>) -> Void) where T: Stored {
+    public func upsert<T>(_ objects: [T], completion: @escaping (Result<(updated: [T], inserted: [T]), Error>) -> Void) where T: Stored {
         checkType(T.self)
         
         performWriteTask { context, savingClosure in
@@ -381,7 +381,7 @@ extension CoreDataDBClient: DBClient {
     
     /// For each element in collection:
     /// After all deletes try to save context
-    public func delete<T>(_ objects: [T], completion: @escaping (Result<()>) -> Void) where T: Stored {
+    public func delete<T>(_ objects: [T], completion: @escaping (Result<(), Error>) -> Void) where T: Stored {
         checkType(T.self)
         
         performWriteTask { context, savingClosure in
@@ -397,10 +397,10 @@ extension CoreDataDBClient: DBClient {
         }
     }
     
-    public func execute<T: Stored>(_ request: FetchRequest<T>) -> Result<[T]> {
+    public func execute<T: Stored>(_ request: FetchRequest<T>) -> Result<[T], Error> {
         let coreDataModelType = checkType(T.self)
         
-        var executeResult: Result<[T]>!
+        var executeResult: Result<[T], Error>!
         
         performReadTaskAndWait { context in
             let fetchRequest = self.fetchRequest(for: coreDataModelType)
@@ -422,10 +422,10 @@ extension CoreDataDBClient: DBClient {
     }
     
     @discardableResult
-    public func insert<T: Stored>(_ objects: [T]) -> Result<[T]> {
+    public func insert<T: Stored>(_ objects: [T]) -> Result<[T], Error> {
         checkType(T.self)
         
-        var result: Result<[T]>!
+        var result: Result<[T], Error>!
         
         performWriteTaskAndWait { context, savingClosure in
             var insertedObjects = [T]()
@@ -451,10 +451,10 @@ extension CoreDataDBClient: DBClient {
     }
     
     @discardableResult
-    public func update<T: Stored>(_ objects: [T]) -> Result<[T]> {
+    public func update<T: Stored>(_ objects: [T]) -> Result<[T], Error> {
         checkType(T.self)
         
-        var result: Result<[T]>!
+        var result: Result<[T], Error>!
         
         performWriteTaskAndWait { context, savingClosure in
             var updatedObjects = [T]()
@@ -481,10 +481,10 @@ extension CoreDataDBClient: DBClient {
     }
     
     @discardableResult
-    public func delete<T: Stored>(_ objects: [T]) -> Result<()> {
+    public func delete<T: Stored>(_ objects: [T]) -> Result<(), Error> {
         checkType(T.self)
         
-        var result: Result<()>!
+        var result: Result<(), Error>!
         
         performWriteTaskAndWait { context, savingClosure in
             let foundObjects = self.find(objects, in: context)
@@ -501,7 +501,7 @@ extension CoreDataDBClient: DBClient {
         return result
     }
     
-    public func deleteAllObjects<T>(of type: T.Type, completion: @escaping (Result<()>) -> Void) where T : Stored {
+    public func deleteAllObjects<T>(of type: T.Type, completion: @escaping (Result<(), Error>) -> Void) where T : Stored {
         let type = checkType(T.self)
         
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: type.entityName)
@@ -525,10 +525,10 @@ extension CoreDataDBClient: DBClient {
     }
     
     @discardableResult
-    public func upsert<T : Stored>(_ objects: [T]) -> Result<(updated: [T], inserted: [T])> {
+    public func upsert<T : Stored>(_ objects: [T]) -> Result<(updated: [T], inserted: [T]), Error> {
         checkType(T.self)
         
-        var result: Result<(updated: [T], inserted: [T])>!
+        var result: Result<(updated: [T], inserted: [T]), Error>!
         
         performWriteTaskAndWait { context, savingClosure in
             var updatedObjects = [T]()
